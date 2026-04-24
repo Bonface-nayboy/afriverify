@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 type Step = 'UPLOAD_ID' | 'SELFIE' | 'PROCESSING' | 'RESULT';
 
@@ -27,6 +28,7 @@ export default function KYCPage() {
   const [selfie, setSelfie] = useState<string | null>(null);
   const [result, setResult] = useState<KYCResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleIdUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,9 +47,16 @@ export default function KYCPage() {
       const res = await api.verifyIdentity(idFront, '', selfie);
       setResult(res);
       setStep('RESULT');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setStep('UPLOAD_ID');
+      toast({
+        variant: "destructive",
+        title: "Verification Failed",
+        description: err.message?.includes('503') 
+          ? "The AI service is currently experiencing high demand. Please try again in a few moments."
+          : "An unexpected error occurred during verification. Please try again.",
+      });
     } finally {
       setLoading(false);
     }

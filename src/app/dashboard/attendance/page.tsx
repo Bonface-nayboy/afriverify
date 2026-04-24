@@ -13,11 +13,13 @@ import {
   History,
   Info
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AttendancePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AttendanceResult | null>(null);
   const [history, setHistory] = useState<AttendanceResult[]>([]);
+  const { toast } = useToast();
 
   const handleCapture = async (img: string) => {
     setLoading(true);
@@ -26,8 +28,13 @@ export default function AttendancePage() {
       const res = await api.recognizeFace(img);
       setResult(res);
       setHistory(prev => [res, ...prev.slice(0, 4)]);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Recognition Failed",
+        description: "Could not identify the user. Please ensure your face is clearly visible.",
+      });
     } finally {
       setLoading(false);
     }
