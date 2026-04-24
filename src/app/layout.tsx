@@ -1,4 +1,3 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -26,8 +25,8 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background text-foreground transition-colors duration-300">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
