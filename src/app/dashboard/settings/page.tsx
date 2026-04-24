@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -126,7 +127,7 @@ function SettingsNavButton({ icon: Icon, label, active = false }: any) {
   );
 }
 
-function Badge({ children, className, variant }: any) {
+function Badge({ children, className }: any) {
   return (
     <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-bold uppercase", className)}>
       {children}
