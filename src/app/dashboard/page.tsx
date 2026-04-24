@@ -46,7 +46,7 @@ export default function DashboardOverview() {
     return query(
       collection(firestore, 'verifications'), 
       orderBy('createdAt', 'desc'), 
-      limit(10)
+      limit(20)
     );
   }, [firestore]);
 
@@ -70,7 +70,6 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      {/* Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard 
           title="Daily Traffic" 
@@ -103,7 +102,6 @@ export default function DashboardOverview() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-7">
-        {/* Verification Trends Chart */}
         <Card className="lg:col-span-4 border-none shadow-md">
           <CardHeader>
             <CardTitle className="text-lg">Volume Trends</CardTitle>
@@ -132,7 +130,6 @@ export default function DashboardOverview() {
           </CardContent>
         </Card>
 
-        {/* Real-time Activity Feed */}
         <Card className="lg:col-span-3 border-none shadow-md overflow-hidden">
           <CardHeader className="bg-muted/30">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -151,11 +148,11 @@ export default function DashboardOverview() {
                     item.status === 'VERIFIED' ? "bg-green-100 text-green-700" :
                     item.status === 'FAILED' ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
                   )}>
-                    {item.ocr.name[0]}
+                    {item.ocrData?.name?.[0] || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
-                      <p className="text-sm font-bold truncate">{item.ocr.name}</p>
+                      <p className="text-sm font-bold truncate">{item.ocrData?.name || 'Anonymous User'}</p>
                       <span className={cn(
                         "text-[10px] font-bold px-2 py-0.5 rounded-full",
                         item.status === 'VERIFIED' ? "bg-green-100 text-green-700" :
@@ -172,7 +169,7 @@ export default function DashboardOverview() {
                       <div className="mt-2 p-2 bg-orange-50 border border-orange-100 rounded-lg">
                         <p className="text-[10px] text-orange-700 font-medium leading-relaxed flex gap-1">
                           <ShieldAlert className="w-3 h-3 shrink-0" />
-                          {item.aiExplanation.substring(0, 100)}...
+                          {item.aiExplanation.substring(0, 80)}...
                         </p>
                       </div>
                     )}

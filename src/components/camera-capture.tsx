@@ -1,9 +1,11 @@
-"use client"
+'use client';
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Camera, RefreshCw, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 interface CameraCaptureProps {
   onCapture: (image: string) => void;
@@ -14,33 +16,39 @@ interface CameraCaptureProps {
 export function CameraCapture({ onCapture, label = "Capture Photo", aspectRatio = 'portrait' }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isActive, setIsActive] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const startCamera = async () => {
-    try {
-      setError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setIsActive(true);
+  useEffect(() => {
+    const getCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        setHasCameraPermission(true);
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Camera Access Denied',
+          description: 'Please enable camera permissions in your browser settings to use this app.',
+        });
       }
-    } catch (err) {
-      setError("Camera permission denied or not found.");
-      console.error(err);
-    }
-  };
+    };
 
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      setIsActive(false);
-    }
-  };
+    getCameraPermission();
+
+    return () => {
+      if (videoRef.current?.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [toast]);
 
   const capture = useCallback(() => {
     if (videoRef.current && canvasRef.current) {
@@ -52,38 +60,28 @@ export function CameraCapture({ onCapture, label = "Capture Photo", aspectRatio 
         const dataUrl = canvasRef.current.toDataURL('image/jpeg');
         setCapturedImage(dataUrl);
         onCapture(dataUrl);
-        stopCamera();
       }
     }
   }, [onCapture]);
 
-  useEffect(() => {
-    return () => stopCamera();
-  }, []);
+  const retake = () => {
+    setCapturedImage(null);
+  };
 
   return (
     <div className="flex flex-col items-center space-y-4 w-full">
-      <Card className={`relative overflow-hidden w-full max-w-sm bg-black border-2 ${isActive ? 'border-primary' : 'border-border'}`}>
-        <div className={`aspect-[${aspectRatio === 'portrait' ? '3/4' : '16/9'}] flex items-center justify-center`}>
-          {!isActive && !capturedImage && (
-            <div className="text-center p-8">
-              <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <Button onClick={startCamera} variant="outline" className="text-white border-white hover:bg-white/10">
-                Open Camera
-              </Button>
-            </div>
-          )}
+      <Card className={`relative overflow-hidden w-full max-w-sm bg-black border-2 ${hasCameraPermission ? 'border-primary' : 'border-border'}`}>
+        <div className={`relative aspect-[${aspectRatio === 'portrait' ? '3/4' : '16/9'}] flex items-center justify-center`}>
+          {/* Always show video tag irrespective of hasCameraPermission check to prevent race condition */}
+          <video 
+            ref={videoRef} 
+            autoPlay 
+            playsInline 
+            muted
+            className={`w-full h-full object-cover scale-x-[-1] ${capturedImage ? 'hidden' : 'block'}`} 
+          />
 
-          {isActive && (
-            <video 
-              ref={videoRef} 
-              autoPlay 
-              playsInline 
-              className="w-full h-full object-cover scale-x-[-1]" 
-            />
-          )}
-
-          {capturedImage && !isActive && (
+          {capturedImage && (
             <img 
               src={capturedImage} 
               alt="Captured" 
@@ -91,21 +89,31 @@ export function CameraCapture({ onCapture, label = "Capture Photo", aspectRatio 
             />
           )}
 
-          {error && <div className="absolute inset-0 bg-destructive/90 flex items-center justify-center p-4 text-center text-white text-sm">{error}</div>}
+          {hasCameraPermission === false && (
+            <div className="absolute inset-0 bg-background/80 flex items-center justify-center p-6 text-center">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Camera Access Required</AlertTitle>
+                <AlertDescription>
+                  Please allow camera access to use this feature.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
         </div>
       </Card>
 
       <canvas ref={canvasRef} className="hidden" />
 
       <div className="flex gap-2">
-        {isActive && (
+        {!capturedImage && hasCameraPermission && (
           <Button onClick={capture} className="rounded-full px-6 bg-primary hover:bg-primary/90">
-            <Camera className="w-4 h-4 mr-2" /> Capture
+            <Camera className="w-4 h-4 mr-2" /> {label}
           </Button>
         )}
         
-        {capturedImage && !isActive && (
-          <Button onClick={() => { setCapturedImage(null); startCamera(); }} variant="outline" className="rounded-full px-6">
+        {capturedImage && (
+          <Button onClick={retake} variant="outline" className="rounded-full px-6">
             <RefreshCw className="w-4 h-4 mr-2" /> Retake
           </Button>
         )}

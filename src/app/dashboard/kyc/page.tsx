@@ -7,15 +7,14 @@ import { CameraCapture } from '@/components/camera-capture';
 import { api, KYCResult } from '@/lib/api';
 import { 
   Upload, 
-  Camera, 
   CheckCircle2, 
-  AlertCircle, 
   Loader2, 
   User, 
   FileText,
   Calendar,
   Globe,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -48,6 +47,7 @@ export default function KYCPage() {
       setStep('RESULT');
     } catch (err) {
       console.error(err);
+      setStep('UPLOAD_ID');
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,6 @@ export default function KYCPage() {
         <p className="text-muted-foreground mt-2">Test our AI document extraction and facial matching technology.</p>
       </div>
 
-      {/* Progress Stepper */}
       <div className="flex items-center justify-center gap-4 mb-8">
         <StepperItem active={step === 'UPLOAD_ID'} completed={step !== 'UPLOAD_ID'} label="Upload ID" />
         <div className="h-px w-8 bg-border" />
@@ -151,35 +150,41 @@ export default function KYCPage() {
 
           {step === 'RESULT' && result && (
             <div className="space-y-8 animate-in fade-in duration-500">
-              <div className="flex items-center gap-6 p-6 rounded-2xl bg-green-50 border border-green-200">
-                <CheckCircle2 className="h-12 w-12 text-green-600" />
+              <div className={cn(
+                "flex items-center gap-6 p-6 rounded-2xl border",
+                result.status === 'VERIFIED' ? "bg-green-50 border-green-200" : "bg-orange-50 border-orange-200"
+              )}>
+                {result.status === 'VERIFIED' ? (
+                  <CheckCircle2 className="h-12 w-12 text-green-600" />
+                ) : (
+                  <ShieldCheck className="h-12 w-12 text-orange-600" />
+                )}
                 <div>
-                  <h3 className="text-2xl font-bold text-green-800">Identity Verified</h3>
-                  <p className="text-green-700">Verification successful. All checks passed with high confidence.</p>
-                </div>
-                <div className="ml-auto text-right">
-                  <span className="text-xs font-bold text-green-800 uppercase tracking-widest bg-green-200 px-3 py-1 rounded-full">
-                    ID: 8F2G9H1
-                  </span>
+                  <h3 className={cn("text-2xl font-bold", result.status === 'VERIFIED' ? "text-green-800" : "text-orange-800")}>
+                    {result.status === 'VERIFIED' ? "Identity Verified" : "Suspicious Activity Detected"}
+                  </h3>
+                  <p className={result.status === 'VERIFIED' ? "text-green-700" : "text-orange-700"}>
+                    {result.status === 'VERIFIED' 
+                      ? "Verification successful. All checks passed with high confidence." 
+                      : "The AI analyst flagged some inconsistencies. Review required."}
+                  </p>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-8">
-                {/* Extracted Data */}
                 <div className="space-y-4">
                   <h4 className="text-sm font-bold text-muted-foreground uppercase flex items-center gap-2">
                     <FileText className="w-4 h-4" /> Extracted Information
                   </h4>
                   <div className="grid grid-cols-1 gap-3 p-4 bg-muted/30 rounded-xl border">
-                    <DataField icon={User} label="Full Name" value={result.ocr.name} />
-                    <DataField icon={CheckCircle2} label="Document #" value={result.ocr.idNumber} />
-                    <DataField icon={Calendar} label="Date of Birth" value={result.ocr.dob} />
-                    <DataField icon={Calendar} label="Expiry Date" value={result.ocr.expiry} />
-                    <DataField icon={Globe} label="Issuing Country" value={result.ocr.country} />
+                    <DataField icon={User} label="Full Name" value={result.ocrData.name} />
+                    <DataField icon={CheckCircle2} label="Document #" value={result.ocrData.idNumber} />
+                    <DataField icon={Calendar} label="Date of Birth" value={result.ocrData.dob} />
+                    <DataField icon={Calendar} label="Expiry Date" value={result.ocrData.expiry} />
+                    <DataField icon={Globe} label="Issuing Country" value={result.ocrData.country} />
                   </div>
                 </div>
 
-                {/* Score Analysis */}
                 <div className="space-y-4">
                   <h4 className="text-sm font-bold text-muted-foreground uppercase flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4" /> Confidence Scores
@@ -191,6 +196,17 @@ export default function KYCPage() {
                   </div>
                 </div>
               </div>
+
+              {result.aiExplanation && (
+                <Card className="bg-orange-50 border-orange-100">
+                  <CardContent className="pt-6">
+                    <h4 className="text-sm font-bold text-orange-800 uppercase flex items-center gap-2 mb-2">
+                      <ShieldCheck className="w-4 h-4" /> AI Analyst Commentary
+                    </h4>
+                    <p className="text-sm text-orange-700 leading-relaxed">{result.aiExplanation}</p>
+                  </CardContent>
+                </Card>
+              )}
 
               <div className="flex justify-center pt-4">
                 <Button variant="outline" size="lg" onClick={() => setStep('UPLOAD_ID')}>
@@ -247,24 +263,4 @@ function ScoreIndicator({ label, score, color }: any) {
       </div>
     </div>
   );
-}
-
-function ShieldCheck(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  )
 }

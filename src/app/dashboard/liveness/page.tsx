@@ -8,10 +8,7 @@ import { api } from '@/lib/api';
 import { 
   UserCheck, 
   RotateCw, 
-  ArrowLeft, 
-  ArrowRight, 
   CheckCircle2, 
-  XCircle,
   Loader2,
   AlertCircle
 } from 'lucide-react';
@@ -25,7 +22,6 @@ const instructions = [
 ];
 
 export default function LivenessPage() {
-  const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'IDLE' | 'RECORDING' | 'ANALYZING' | 'SUCCESS' | 'FAILED'>('IDLE');
@@ -41,13 +37,17 @@ export default function LivenessPage() {
               return 0;
             } else {
               setStatus('ANALYZING');
-              setTimeout(() => setStatus('SUCCESS'), 2000);
+              const score = 98 + Math.random() * 2;
+              setTimeout(() => {
+                setStatus('SUCCESS');
+                api.recordLivenessCheck(score, 'SUCCESS');
+              }, 2000);
               return 100;
             }
           }
-          return prev + 5;
+          return prev + 10;
         });
-      }, 100);
+      }, 150);
     }
     return () => clearInterval(interval);
   }, [status, currentStep]);
@@ -56,7 +56,6 @@ export default function LivenessPage() {
     setStatus('RECORDING');
     setCurrentStep(0);
     setProgress(0);
-    setIsActive(true);
   };
 
   return (
@@ -100,10 +99,6 @@ export default function LivenessPage() {
                     <Progress value={progress} className="h-1 bg-white/20" />
                   </div>
                 </div>
-                {/* Visual Guides */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-64 h-64 border-2 border-dashed border-white/30 rounded-full" />
-                </div>
               </>
             )}
 
@@ -125,7 +120,7 @@ export default function LivenessPage() {
                   <p className="text-green-400 font-medium">Confidence Score: 99.8%</p>
                 </div>
                 <Button variant="outline" onClick={() => setStatus('IDLE')} className="text-white border-white hover:bg-white/10">
-                  Try Again
+                  New Session
                 </Button>
               </div>
             )}
@@ -142,7 +137,7 @@ export default function LivenessPage() {
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Standard photos can be easily faked with masks, screens, or photos. Our liveness engine detects depth and muscle micro-movements to ensure a real presence.
+              Standard photos can be easily faked. Our engine detects muscle micro-movements to ensure a real presence.
             </p>
           </CardContent>
         </Card>
@@ -154,7 +149,7 @@ export default function LivenessPage() {
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Fully compliant with iBeta Level 2 standards for biometric spoof detection. Trusted by top fintechs for high-risk onboarding.
+              Fully compliant with iBeta Level 2 standards for biometric spoof detection.
             </p>
           </CardContent>
         </Card>
