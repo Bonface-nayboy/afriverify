@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -38,6 +39,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
@@ -149,6 +151,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
+                <DialogHeader className="sr-only">
+                  <DialogTitle>Search System</DialogTitle>
+                  <DialogDescription>
+                    Quickly search through verification records, employee check-ins, and system activities.
+                  </DialogDescription>
+                </DialogHeader>
                 <div className="flex items-center border-b px-4 h-12">
                   <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                   <input
