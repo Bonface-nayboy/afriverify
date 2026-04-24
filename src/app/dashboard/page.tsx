@@ -1,7 +1,6 @@
-
 "use client"
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   Users, 
@@ -11,7 +10,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ShieldAlert,
-  Clock
+  Clock,
+  Activity
 } from 'lucide-react';
 import { 
   CartesianGrid, 
@@ -23,74 +23,80 @@ import {
   YAxis
 } from 'recharts';
 import { cn } from '@/lib/utils';
-import { api, KYCResult } from '@/lib/api';
+import { KYCResult } from '@/lib/api';
 import { formatDistanceToNow } from 'date-fns';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 
-const staticData = [
-  { name: 'Mon', count: 400 },
-  { name: 'Tue', count: 300 },
-  { name: 'Wed', count: 600 },
-  { name: 'Thu', count: 800 },
-  { name: 'Fri', count: 500 },
-  { name: 'Sat', count: 200 },
-  { name: 'Sun', count: 100 },
+const staticTrendData = [
+  { name: 'Mon', count: 420 },
+  { name: 'Tue', count: 380 },
+  { name: 'Wed', count: 590 },
+  { name: 'Thu', count: 720 },
+  { name: 'Fri', count: 550 },
+  { name: 'Sat', count: 280 },
+  { name: 'Sun', count: 150 },
 ];
 
 export default function DashboardOverview() {
-  const [recentVerifications, setRecentVerifications] = useState<KYCResult[]>([]);
-  const [loading, setLoading] = useState(true);
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await api.getRecentVerifications(10);
-        setRecentVerifications(data);
-      } catch (err) {
-        console.error("Dashboard data fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const verificationsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'verifications'), 
+      orderBy('createdAt', 'desc'), 
+      limit(10)
+    );
+  }, [firestore]);
 
-  const totalCount = recentVerifications.length > 0 ? 12842 + recentVerifications.length : 12842;
-  const fraudCount = recentVerifications.filter(v => v.status === 'SUSPICIOUS').length;
+  const { data: recentVerifications, loading } = useCollection<KYCResult>(verificationsQuery);
+
+  const stats = useMemo(() => {
+    const verified = recentVerifications.filter(v => v.status === 'VERIFIED').length;
+    const suspicious = recentVerifications.filter(v => v.status === 'SUSPICIOUS').length;
+    return { verified, suspicious };
+  }, [recentVerifications]);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">System Overview</h1>
-        <p className="text-muted-foreground">Monitor your identity verification performance in real-time.</p>
+    <div className="space-y-8 animate-in fade-in duration-700">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">System Command Center</h1>
+          <p className="text-muted-foreground">Monitoring active verification streams across Africa.</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-bold text-primary bg-primary/5 px-3 py-1.5 rounded-full border border-primary/20">
+          <Activity className="w-3 h-3 animate-pulse" /> Live Updates Enabled
+        </div>
       </div>
 
       {/* Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard 
-          title="Total Verifications" 
-          value={totalCount.toLocaleString()} 
+          title="Daily Traffic" 
+          value="14.2k" 
           change="+12.5%" 
           trend="up" 
           icon={Users} 
         />
         <MetricCard 
-          title="Success Rate" 
+          title="Approval Rate" 
           value="98.2%" 
           change="+0.4%" 
           trend="up" 
           icon={CheckCircle2} 
         />
         <MetricCard 
-          title="Fraud Alerts" 
-          value={(24 + fraudCount).toString()} 
-          change={fraudCount > 0 ? `+${fraudCount}` : "0"} 
-          trend={fraudCount > 0 ? "up" : "down"} 
+          title="Active Fraud Alerts" 
+          value={(24 + stats.suspicious).toString()} 
+          change={stats.suspicious > 0 ? `+${stats.suspicious} now` : "Stable"} 
+          trend={stats.suspicious > 0 ? "up" : "down"} 
           icon={AlertTriangle} 
         />
         <MetricCard 
-          title="Avg. Latency" 
-          value="1.2s" 
-          change="+0.1s" 
+          title="Global Latency" 
+          value="1.1s" 
+          change="-0.2s" 
           trend="down" 
           icon={TrendingUp} 
         />
@@ -98,15 +104,15 @@ export default function DashboardOverview() {
 
       <div className="grid gap-8 lg:grid-cols-7">
         {/* Verification Trends Chart */}
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-4 border-none shadow-md">
           <CardHeader>
-            <CardTitle>Verification Trends</CardTitle>
-            <CardDescription>Daily volume of identity checks across all products.</CardDescription>
+            <CardTitle className="text-lg">Volume Trends</CardTitle>
+            <CardDescription>Historical verification volume by day.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={staticData}>
+                <AreaChart data={staticTrendData}>
                   <defs>
                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -117,61 +123,64 @@ export default function DashboardOverview() {
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#888'}} />
                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#888'}} />
                   <Tooltip 
-                    contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} 
+                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)'}} 
                   />
-                  <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorCount)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorCount)" strokeWidth={3} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>The latest verification logs from your API.</CardDescription>
+        {/* Real-time Activity Feed */}
+        <Card className="lg:col-span-3 border-none shadow-md overflow-hidden">
+          <CardHeader className="bg-muted/30">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Activity className="w-4 h-4 text-primary" /> Live Feed
+            </CardTitle>
+            <CardDescription>Most recent verification attempts.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
+          <CardContent className="p-0">
+            <div className="divide-y max-h-[400px] overflow-auto">
               {loading ? (
-                <div className="py-8 text-center text-muted-foreground">Loading logs...</div>
+                <div className="p-8 text-center text-muted-foreground animate-pulse text-sm font-medium">Listening for events...</div>
               ) : recentVerifications.length > 0 ? recentVerifications.map((item) => (
-                <div key={item.id} className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className={cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center font-bold text-xs shrink-0",
-                      item.status === 'VERIFIED' ? "bg-green-100 text-green-700" :
-                      item.status === 'FAILED' ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
-                    )}>
-                      {item.ocr.name[0]}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{item.ocr.name}</p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formatDistanceToNow(new Date(item.timestamp))} ago
-                      </p>
-                      {item.aiExplanation && (
-                        <p className="text-[10px] text-orange-600 font-medium mt-1 leading-tight flex items-start gap-1">
-                          <ShieldAlert className="w-3 h-3 shrink-0" />
-                          {item.aiExplanation.substring(0, 80)}...
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                <div key={item.id} className="p-4 hover:bg-muted/10 transition-colors flex items-start gap-4 group">
                   <div className={cn(
-                    "px-2 py-1 rounded text-[10px] font-bold uppercase shrink-0",
-                    item.status === 'VERIFIED' ? "bg-green-50 text-green-700 border border-green-200" :
-                    item.status === 'FAILED' ? "bg-red-50 text-red-700 border border-red-200" : 
-                    "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                    "h-10 w-10 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ring-2 ring-white shadow-sm",
+                    item.status === 'VERIFIED' ? "bg-green-100 text-green-700" :
+                    item.status === 'FAILED' ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
                   )}>
-                    {item.status}
+                    {item.ocr.name[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <p className="text-sm font-bold truncate">{item.ocr.name}</p>
+                      <span className={cn(
+                        "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                        item.status === 'VERIFIED' ? "bg-green-100 text-green-700" :
+                        item.status === 'FAILED' ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
+                      )}>
+                        {item.status}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <Clock className="w-3 h-3" />
+                      {item.timestamp ? formatDistanceToNow(new Date(item.timestamp)) : 'Recently'} ago
+                    </p>
+                    {item.aiExplanation && (
+                      <div className="mt-2 p-2 bg-orange-50 border border-orange-100 rounded-lg">
+                        <p className="text-[10px] text-orange-700 font-medium leading-relaxed flex gap-1">
+                          <ShieldAlert className="w-3 h-3 shrink-0" />
+                          {item.aiExplanation.substring(0, 100)}...
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )) : (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  No activity found. Start a verification to see results.
+                <div className="p-12 text-center text-sm text-muted-foreground">
+                  No verification traffic yet.
                 </div>
               )}
             </div>
@@ -184,19 +193,19 @@ export default function DashboardOverview() {
 
 function MetricCard({ title, value, change, trend, icon: Icon }: any) {
   return (
-    <Card>
+    <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">{title}</CardTitle>
+        <div className="p-2 bg-muted rounded-lg"><Icon className="h-4 w-4 text-primary" /></div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-2xl font-black">{value}</div>
         <p className={cn(
-          "text-xs font-medium flex items-center mt-1",
+          "text-[10px] font-bold flex items-center mt-1",
           trend === 'up' ? "text-green-600" : "text-red-600"
         )}>
           {trend === 'up' ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
-          {change} from last month
+          {change} <span className="text-muted-foreground ml-1 font-normal">vs prev. month</span>
         </p>
       </CardContent>
     </Card>
