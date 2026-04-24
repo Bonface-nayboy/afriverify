@@ -27,7 +27,7 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
-          enableSystem={true}
+          enableSystem={false}
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
@@ -40,3 +40,4 @@ export default function RootLayout({
       </body>
     </html>
   );
+}

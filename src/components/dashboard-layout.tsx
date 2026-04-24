@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -18,8 +18,7 @@ import {
   Monitor,
   Command,
   X,
-  FileText,
-  History
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -61,6 +60,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setIsSearchOpen((open) => !open)
+      }
+    }
+    document.addEventListener("keydown", down)
+    return () => document.removeEventListener("keydown", down)
+  }, [])
+
   const handleLogout = async () => {
     if (!auth) return;
     try {
@@ -78,11 +88,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     );
   }, [searchQuery]);
 
-  // Mock "files" (records) search results
   const mockRecentFiles = [
     { name: "Ngozi Okonjo - KYC", type: "Verification Record", href: "/dashboard/logs" },
     { name: "Lagos Branch - Attendance", type: "Attendance Log", href: "/dashboard/logs" },
     { name: "System Config.json", type: "Settings File", href: "/dashboard/settings" },
+    { name: "Kofi Annan - KYC", type: "Verification Record", href: "/dashboard/logs" },
+    { name: "Security Policy.pdf", type: "Document", href: "/dashboard/settings" },
+    { name: "Daily Report - Monday", type: "Log File", href: "/dashboard/logs" },
   ];
 
   const filteredFiles = useMemo(() => {
@@ -173,7 +185,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </DialogTrigger>
               <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
                 <DialogHeader className="sr-only">
-                  <DialogTitle>Search System</DialogTitle>
+                  <DialogTitle>Global System Search</DialogTitle>
                   <DialogDescription>
                     Search across application folders, verification files, and system records.
                   </DialogDescription>
@@ -206,8 +218,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       >
                         <item.icon className="mr-3 h-4 w-4 text-primary" /> {item.label}
                       </Button>
-                    )) : !searchQuery && (
-                      <p className="text-xs text-muted-foreground px-3">Start typing to see app sections...</p>
+                    )) : searchQuery && (
+                      <p className="text-xs text-muted-foreground px-3 py-2">No matching sections found.</p>
                     )}
                   </div>
 
