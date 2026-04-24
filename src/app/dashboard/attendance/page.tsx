@@ -1,6 +1,8 @@
+
 "use client"
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CameraCapture } from '@/components/camera-capture';
@@ -120,7 +122,7 @@ export default function AttendancePage() {
                       <h3 className="text-xl font-bold">{result.userName}</h3>
                       <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(result.timestamp).toLocaleTimeString()}</span>
-                        <span className="flex items-center gap-1 text-green-600 font-bold"><CheckCircle2 className="w-3 h-3" /> {result.confidence}% Match</span>
+                        <span className="flex items-center gap-1 text-green-600 font-bold"><CheckCircle2 className="w-3 h-3" /> {result.confidence.toFixed(1)}% Match</span>
                       </div>
                     </div>
                     <div className="text-right">
@@ -181,7 +183,9 @@ export default function AttendancePage() {
                 )}
               </div>
               {history.length > 0 && (
-                <Button variant="link" className="w-full text-xs mt-4">View All Activity Logs</Button>
+                <Link href="/dashboard/logs" className="block w-full">
+                  <Button variant="link" className="w-full text-xs mt-4">View All Activity Logs</Button>
+                </Link>
               )}
             </CardContent>
           </Card>
