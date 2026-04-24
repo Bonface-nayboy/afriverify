@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -7,10 +8,12 @@ import { ShieldCheck, LogIn } from 'lucide-react';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const auth = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleLogin = async () => {
     if (!auth) return;
@@ -18,8 +21,15 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed", error);
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: error.code === 'auth/unauthorized-domain' 
+          ? "This domain is not authorized. Please add it to your Firebase Console."
+          : error.message || "Failed to sign in with Google.",
+      });
     }
   };
 
