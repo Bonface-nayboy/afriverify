@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
@@ -16,56 +17,89 @@ interface CameraCaptureProps {
 export function CameraCapture({ onCapture, label = "Capture Photo", aspectRatio = 'portrait' }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    // Stop any existing stream before starting a new one
+    stopCamera();
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      
+      setHasCameraPermission(true);
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setHasCameraPermission(false);
+      toast({
+        variant: 'destructive',
+        title: 'Camera Access Denied',
+        description: 'Please enable camera permissions in your browser settings to use this app.',
+      });
+    }
+  }, [stopCamera, toast]);
+
+  // Manage camera lifecycle based on capturedImage state
   useEffect(() => {
-    const getCameraPermission = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-        setHasCameraPermission(true);
+    if (!capturedImage) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please enable camera permissions in your browser settings to use this app.',
-        });
-      }
-    };
-
-    getCameraPermission();
-
+    // Cleanup: always stop camera when component unmounts
     return () => {
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-      }
+      stopCamera();
     };
-  }, [toast]);
+  }, [capturedImage, startCamera, stopCamera]);
 
   const capture = useCallback(() => {
     if (videoRef.current && canvasRef.current) {
       const context = canvasRef.current.getContext('2d');
       if (context) {
+        // Match canvas dimensions to video stream
         canvasRef.current.width = videoRef.current.videoWidth;
         canvasRef.current.height = videoRef.current.videoHeight;
+        
+        // Draw the current frame
         context.drawImage(videoRef.current, 0, 0);
+        
         const dataUrl = canvasRef.current.toDataURL('image/jpeg');
         setCapturedImage(dataUrl);
         onCapture(dataUrl);
+        
+        // Explicitly stop camera stream after capture
+        stopCamera();
       }
     }
-  }, [onCapture]);
+  }, [onCapture, stopCamera]);
 
   const retake = () => {
     setCapturedImage(null);
+    // startCamera will be re-triggered by the useEffect
   };
 
   return (
