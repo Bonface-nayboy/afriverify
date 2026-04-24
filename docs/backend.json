@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Verification": {
@@ -38,6 +37,19 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "userName", "confidence", "timestamp"]
+    },
+    "EnterpriseLead": {
+      "title": "Enterprise Lead",
+      "description": "Information captured from users interested in enterprise features.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "company": { "type": "string" },
+        "featureOfInterest": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email", "company", "timestamp"]
     }
   },
   "auth": {
@@ -51,6 +63,10 @@
     "/attendance/{attendanceId}": {
       "schema": "#/backend/entities/AttendanceRecord",
       "description": "Collection of employee check-in records."
+    },
+    "/leads/{leadId}": {
+      "schema": "#/backend/entities/EnterpriseLead",
+      "description": "Collection of enterprise sales leads."
     }
   }
 }

@@ -2,7 +2,7 @@
 
 import { kycIdDataExtraction } from '@/ai/flows/kyc-id-data-extraction-flow';
 import { explainFraudAlert } from '@/ai/flows/fraud-alert-explanation-flow';
-import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, Firestore } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, Firestore } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -148,5 +148,23 @@ export const api = {
     } catch (error) {
       throw error;
     }
+  },
+
+  async submitEnterpriseLead(lead: { userId: string; email: string; company: string; featureOfInterest: string }) {
+    if (!firestore) return;
+    const data = {
+      ...lead,
+      timestamp: new Date().toISOString(),
+      createdAt: serverTimestamp()
+    };
+    addDoc(collection(firestore, 'leads'), data)
+      .catch(async () => {
+        const permissionError = new FirestorePermissionError({
+          path: 'leads',
+          operation: 'create',
+          requestResourceData: data,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   }
 };

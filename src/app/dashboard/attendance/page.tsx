@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CameraCapture } from '@/components/camera-capture';
 import { api, AttendanceResult } from '@/lib/api';
@@ -11,15 +11,36 @@ import {
   CheckCircle2, 
   Loader2, 
   History,
-  Info
+  Info,
+  Building2,
+  Mail,
+  Check
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useUser } from '@/firebase';
 
 export default function AttendancePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AttendanceResult | null>(null);
   const [history, setHistory] = useState<AttendanceResult[]>([]);
   const { toast } = useToast();
+  const { user } = useUser();
+
+  // Lead Form State
+  const [leadLoading, setLeadLoading] = useState(false);
+  const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [company, setCompany] = useState('');
+  const [interest, setInterest] = useState('All Enterprise Features');
 
   const handleCapture = async (img: string) => {
     setLoading(true);
@@ -37,6 +58,30 @@ export default function AttendancePage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !company) return;
+
+    setLeadLoading(true);
+    try {
+      await api.submitEnterpriseLead({
+        userId: user.uid,
+        email: user.email || 'N/A',
+        company,
+        featureOfInterest: interest
+      });
+      setLeadSubmitted(true);
+      toast({
+        title: "Request Received",
+        description: "An account executive will contact you within 24 hours.",
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLeadLoading(false);
     }
   };
 
@@ -141,11 +186,94 @@ export default function AttendancePage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-accent text-white border-none">
-            <CardContent className="p-6 space-y-4">
-              <h4 className="font-bold">Upgrade for Enterprise</h4>
-              <p className="text-sm opacity-90">Unlock multi-camera support, thermal imaging, and HR software integrations (BambooHR, Workday).</p>
-              <Button variant="secondary" className="w-full bg-white text-accent hover:bg-white/90">Contact Sales</Button>
+          <Card className="bg-accent text-white border-none shadow-lg overflow-hidden group">
+            <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Building2 className="w-16 h-16" />
+            </div>
+            <CardContent className="p-6 space-y-4 relative z-10">
+              <h4 className="font-bold text-lg">Upgrade for Enterprise</h4>
+              <p className="text-sm opacity-90 leading-relaxed">
+                Unlock multi-camera support, thermal imaging, and HR software integrations (BambooHR, Workday).
+              </p>
+              
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="secondary" className="w-full bg-white text-accent hover:bg-white/90 font-bold">
+                    Contact Sales
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Building2 className="w-5 h-5 text-primary" /> Enterprise Solutions
+                    </DialogTitle>
+                    <DialogDescription>
+                      Tailored security and HR integration for large-scale operations.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  {leadSubmitted ? (
+                    <div className="flex flex-col items-center justify-center py-8 space-y-4 animate-in zoom-in duration-300">
+                      <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                        <Check className="w-8 h-8" />
+                      </div>
+                      <div className="text-center">
+                        <h4 className="font-bold text-lg">Inquiry Sent!</h4>
+                        <p className="text-sm text-muted-foreground">We'll be in touch shortly.</p>
+                      </div>
+                      <Button variant="outline" onClick={() => setLeadSubmitted(false)}>Send another</Button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleLeadSubmit} className="space-y-4 pt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="company">Company Name</Label>
+                        <Input 
+                          id="company" 
+                          placeholder="e.g. Acme Africa Corp" 
+                          required 
+                          value={company}
+                          onChange={(e) => setCompany(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Work Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                          <Input 
+                            id="email" 
+                            type="email" 
+                            className="pl-9" 
+                            disabled 
+                            value={user?.email || ''} 
+                          />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">Inquiry will be linked to your authenticated account.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Primary Interest</Label>
+                        <select 
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          value={interest}
+                          onChange={(e) => setInterest(e.target.value)}
+                        >
+                          <option>HR Integrations (Workday/Bamboo)</option>
+                          <option>Multi-camera Surveillance</option>
+                          <option>Thermal Biometrics</option>
+                          <option>Custom API Webhooks</option>
+                        </select>
+                      </div>
+                      <Button type="submit" className="w-full" disabled={leadLoading}>
+                        {leadLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : 'Request Demo'}
+                      </Button>
+                    </form>
+                  )}
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </div>
