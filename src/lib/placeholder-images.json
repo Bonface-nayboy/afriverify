@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Abstract technological background representing trust and security",
+      "imageUrl": "https://picsum.photos/seed/afri1/1200/800",
+      "imageHint": "security technology"
+    },
+    {
+      "id": "kyc-preview",
+      "description": "Mockup of identity verification document scanning",
+      "imageUrl": "https://picsum.photos/seed/afri2/600/400",
+      "imageHint": "identity verification"
+    },
+    {
+      "id": "liveness-preview",
+      "description": "User performing facial liveness detection",
+      "imageUrl": "https://picsum.photos/seed/afri3/600/400",
+      "imageHint": "biometric liveness"
+    },
+    {
+      "id": "attendance-preview",
+      "description": "Modern office access control with face recognition",
+      "imageUrl": "https://picsum.photos/seed/afri4/600/400",
+      "imageHint": "face recognition"
+    }
+  ]
 }
