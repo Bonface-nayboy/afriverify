@@ -1,7 +1,6 @@
-
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -18,7 +17,9 @@ import {
   Sun,
   Monitor,
   Command,
-  X
+  X,
+  FileText,
+  History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,6 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from '@/components/ui/input';
 
 const navItems = [
   { label: 'Overview', icon: LayoutDashboard, href: '/dashboard' },
@@ -70,6 +70,27 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       console.error("Logout failed", error);
     }
   };
+
+  const filteredNav = useMemo(() => {
+    if (!searchQuery) return navItems;
+    return navItems.filter(item => 
+      item.label.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
+
+  // Mock "files" (records) search results
+  const mockRecentFiles = [
+    { name: "Ngozi Okonjo - KYC", type: "Verification Record", href: "/dashboard/logs" },
+    { name: "Lagos Branch - Attendance", type: "Attendance Log", href: "/dashboard/logs" },
+    { name: "System Config.json", type: "Settings File", href: "/dashboard/settings" },
+  ];
+
+  const filteredFiles = useMemo(() => {
+    if (!searchQuery) return [];
+    return mockRecentFiles.filter(file => 
+      file.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
 
   const initials = user?.displayName 
     ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
@@ -135,7 +156,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </span>
           </div>
 
-          {/* Center Search - Fully Functional Dialog */}
+          {/* Center Search - Fully Functional */}
           <div className="flex-1 max-w-md mx-4 hidden lg:block">
             <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
               <DialogTrigger asChild>
@@ -144,7 +165,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   className="w-full justify-start text-muted-foreground font-normal bg-muted/50 border-none h-10 px-4 group hover:bg-muted/80"
                 >
                   <Search className="w-4 h-4 mr-2 group-hover:text-primary transition-colors" />
-                  <span>Search records, employees...</span>
+                  <span>Search all files and folders...</span>
                   <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 shadow-sm">
                     <Command className="w-2.5 h-2.5" /> K
                   </kbd>
@@ -154,14 +175,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <DialogHeader className="sr-only">
                   <DialogTitle>Search System</DialogTitle>
                   <DialogDescription>
-                    Quickly search through verification records, employee check-ins, and system activities.
+                    Search across application folders, verification files, and system records.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex items-center border-b px-4 h-12">
                   <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                   <input
-                    className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="Type to search verifications or activity logs..."
+                    className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                    placeholder="Type to search 'folders' or 'files'..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     autoFocus
@@ -172,35 +193,59 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     </Button>
                   )}
                 </div>
-                <div className="max-h-[300px] overflow-y-auto p-4 space-y-4">
-                  {searchQuery ? (
-                    <div className="text-center py-12 text-sm text-muted-foreground">
-                      Searching for "<span className="font-bold text-primary">{searchQuery}</span>" across Africa nodes...
+                <div className="max-h-[400px] overflow-y-auto p-2 space-y-4">
+                  {/* Folders (Navigation) */}
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 py-2">Folders (Sections)</p>
+                    {filteredNav.length > 0 ? filteredNav.map((item) => (
+                      <Button 
+                        key={item.href} 
+                        variant="ghost" 
+                        className="w-full justify-start h-10 text-sm font-normal px-3 hover:bg-primary/5"
+                        onClick={() => { setIsSearchOpen(false); router.push(item.href); }}
+                      >
+                        <item.icon className="mr-3 h-4 w-4 text-primary" /> {item.label}
+                      </Button>
+                    )) : !searchQuery && (
+                      <p className="text-xs text-muted-foreground px-3">Start typing to see app sections...</p>
+                    )}
+                  </div>
+
+                  {/* Files (Records) */}
+                  {searchQuery && (
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 py-2">Files (Records)</p>
+                      {filteredFiles.length > 0 ? filteredFiles.map((file, idx) => (
+                        <Button 
+                          key={idx} 
+                          variant="ghost" 
+                          className="w-full justify-start h-10 text-sm font-normal px-3"
+                          onClick={() => { setIsSearchOpen(false); router.push(file.href); }}
+                        >
+                          <FileText className="mr-3 h-4 w-4 text-accent" />
+                          <div className="flex flex-col items-start">
+                            <span>{file.name}</span>
+                            <span className="text-[10px] text-muted-foreground">{file.type}</span>
+                          </div>
+                        </Button>
+                      )) : (
+                        <p className="text-xs text-muted-foreground px-3 py-2">No matching files found.</p>
+                      )}
                     </div>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2">Recent Searches</p>
-                        <div className="grid gap-1">
-                          {['Ngozi Okonjo', 'Lagos Verification Stream', 'High Risk Alerts'].map((item) => (
-                            <Button key={item} variant="ghost" className="w-full justify-start h-9 text-sm font-normal px-2">
-                              <ClipboardList className="mr-2 h-3.5 w-3.5 opacity-50" /> {item}
-                            </Button>
-                          ))}
-                        </div>
+                  )}
+
+                  {!searchQuery && (
+                    <div className="space-y-2 p-3">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Quick Commands</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="outline" className="h-20 flex-col gap-2 text-xs" onClick={() => { setIsSearchOpen(false); router.push('/dashboard/kyc'); }}>
+                          <ShieldCheck className="h-5 w-5 text-primary" /> Start KYC
+                        </Button>
+                        <Button variant="outline" className="h-20 flex-col gap-2 text-xs" onClick={() => { setIsSearchOpen(false); router.push('/dashboard/settings'); }}>
+                          <Settings className="h-5 w-5 text-muted-foreground" /> App Settings
+                        </Button>
                       </div>
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2">Quick Commands</p>
-                        <div className="grid gap-1">
-                          <Button variant="ghost" className="w-full justify-start h-9 text-sm font-normal px-2" onClick={() => { setIsSearchOpen(false); router.push('/dashboard/kyc'); }}>
-                            <ShieldCheck className="mr-2 h-3.5 w-3.5 text-primary" /> Start New Verification
-                          </Button>
-                          <Button variant="ghost" className="w-full justify-start h-9 text-sm font-normal px-2" onClick={() => { setIsSearchOpen(false); router.push('/dashboard/logs'); }}>
-                            <ClipboardList className="mr-2 h-3.5 w-3.5 text-accent" /> Export Data Logs
-                          </Button>
-                        </div>
-                      </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </DialogContent>
@@ -208,7 +253,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
           
           <div className="flex items-center gap-4">
-            {/* Theme Toggle - Enhanced with Monitor Icon for System */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border border-primary/10">

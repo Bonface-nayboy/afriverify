@@ -12,6 +12,7 @@ export function ColorThemeInitializer() {
       const savedColor = localStorage.getItem('app-color-theme') || 'default';
       
       // Themes should NEVER be applied on the system default mode
+      // If theme is 'system', we explicitly remove the data-color-theme attribute
       if (theme === 'system') {
         document.documentElement.removeAttribute('data-color-theme');
       } else {
