@@ -1,7 +1,7 @@
 
 "use client"
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -12,13 +12,18 @@ import {
   Settings, 
   LogOut,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  Search,
+  Moon,
+  Sun,
+  Palette
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTheme } from 'next-themes';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -41,6 +46,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user } = useUser();
   const auth = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const handleLogout = async () => {
     if (!auth) return;
@@ -59,7 +65,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-white hidden md:flex flex-col">
+      <aside className="w-64 border-r bg-card hidden md:flex flex-col">
         <div className="p-6">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary">
             <ShieldCheck className="w-8 h-8" />
@@ -107,7 +113,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <header className="h-16 border-b bg-white flex items-center justify-between px-8">
+        <header className="h-16 border-b bg-card flex items-center justify-between px-8">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>Dashboard</span>
             <ChevronRight className="w-4 h-4" />
@@ -115,8 +121,38 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {navItems.find(i => i.href === pathname)?.label || 'Page'}
             </span>
           </div>
+
+          {/* Center Search */}
+          <div className="flex-1 max-w-md mx-4 hidden lg:block">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start text-muted-foreground font-normal bg-muted/50 border-none h-10 px-4 group"
+            >
+              <Search className="w-4 h-4 mr-2 group-hover:text-primary transition-colors" />
+              <span>Search verifications, employees...</span>
+              <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </Button>
+          </div>
           
           <div className="flex items-center gap-4">
+            {/* Theme Toggle */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                  <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                  <span className="sr-only">Toggle theme</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
