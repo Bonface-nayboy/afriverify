@@ -1,8 +1,15 @@
-import { kycIdDataExtraction } from '@/ai/flows/kyc-id-data-extraction-flow';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+'use client';
+
+import { kycIdDataExtraction } from '@/ai/flows/kyc-id-data-extraction-flow';
+import { explainFraudAlert } from '@/ai/flows/fraud-alert-explanation-flow';
+import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
+
+const { firestore } = initializeFirebase();
 
 export interface KYCResult {
+  id?: string;
   ocr: {
     name: string;
     idNumber: string;
@@ -14,15 +21,12 @@ export interface KYCResult {
   faceMatchScore: number;
   livenessScore: number;
   status: 'VERIFIED' | 'SUSPICIOUS' | 'FAILED';
-}
-
-export interface LivenessResult {
-  isLive: boolean;
-  score: number;
-  session_id: string;
+  timestamp: string;
+  aiExplanation?: string;
 }
 
 export interface AttendanceResult {
+  id?: string;
   userId: string;
   userName: string;
   confidence: number;
@@ -32,20 +36,18 @@ export interface AttendanceResult {
 export const api = {
   async verifyIdentity(idFront: string, idBack: string, selfie: string): Promise<KYCResult> {
     try {
-      // Simulate backend delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
       // Attempt OCR extraction using the GenAI flow
       const extracted = await kycIdDataExtraction({
         idFrontPhotoDataUri: idFront,
         idBackPhotoDataUri: idBack || undefined
       });
 
-      // Mocking face matching and additional verification logic
-      const faceMatchScore = 85 + Math.random() * 10;
-      const livenessScore = 92 + Math.random() * 5;
-      
-      return {
+      // Simulated logic for scores
+      const faceMatchScore = 75 + Math.random() * 25;
+      const livenessScore = 80 + Math.random() * 20;
+      const status = faceMatchScore > 85 && livenessScore > 90 ? 'VERIFIED' : 'SUSPICIOUS';
+
+      const result: KYCResult = {
         ocr: {
           name: extracted.name,
           idNumber: extracted.idNumber,
@@ -56,47 +58,72 @@ export const api = {
         },
         faceMatchScore,
         livenessScore,
-        status: faceMatchScore > 80 ? 'VERIFIED' : 'SUSPICIOUS',
+        status,
+        timestamp: new Date().toISOString()
       };
+
+      // If suspicious, get AI explanation
+      if (status === 'SUSPICIOUS') {
+        const explanation = await explainFraudAlert({
+          verificationId: 'temp-' + Date.now(),
+          ocrData: JSON.stringify(result.ocr),
+          faceMatchScore,
+          livenessScore,
+          fraudFlags: faceMatchScore < 85 ? ['Low Face Match'] : ['Potential Spoofing'],
+          riskScore: 100 - faceMatchScore,
+          timestamp: result.timestamp
+        });
+        result.aiExplanation = explanation.explanation;
+      }
+
+      // Save to Firestore
+      if (firestore) {
+        const docRef = await addDoc(collection(firestore, 'verifications'), {
+          ...result,
+          createdAt: serverTimestamp()
+        });
+        result.id = docRef.id;
+      }
+
+      return result;
     } catch (error) {
-      console.error('API Error:', error);
-      // Fallback to mock data if AI flow or endpoint fails
-      return {
-        ocr: {
-          name: 'Kwame Mensah',
-          idNumber: 'GHA-123456789-0',
-          dob: '1988-05-15',
-          expiry: '2028-12-31',
-          documentType: 'Passport',
-          country: 'Ghana',
-        },
-        faceMatchScore: 94.5,
-        livenessScore: 98.2,
-        status: 'VERIFIED',
-      };
+      console.error('KYC Verification Error:', error);
+      throw error;
     }
   },
 
-  async startLivenessSession(): Promise<{ sessionId: string }> {
-    return { sessionId: Math.random().toString(36).substring(7) };
-  },
-
-  async submitLivenessFrame(sessionId: string, frame: string): Promise<LivenessResult> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return {
-      isLive: true,
-      score: 95.5,
-      session_id: sessionId
-    };
-  },
-
   async recognizeFace(image: string): Promise<AttendanceResult> {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    return {
-      userId: 'emp_001',
-      userName: 'Ngozi Okonjo',
-      confidence: 99.2,
-      timestamp: new Date().toISOString()
-    };
+    try {
+      // Simulation of face matching
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const result: AttendanceResult = {
+        userId: 'emp_' + Math.floor(Math.random() * 1000),
+        userName: 'Ngozi Okonjo',
+        confidence: 98 + Math.random() * 2,
+        timestamp: new Date().toISOString()
+      };
+
+      // Save to Firestore
+      if (firestore) {
+        const docRef = await addDoc(collection(firestore, 'attendance'), {
+          ...result,
+          createdAt: serverTimestamp()
+        });
+        result.id = docRef.id;
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Attendance Recognition Error:', error);
+      throw error;
+    }
+  },
+
+  async getRecentVerifications(count = 5): Promise<KYCResult[]> {
+    if (!firestore) return [];
+    const q = query(collection(firestore, 'verifications'), orderBy('createdAt', 'desc'), limit(count));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as KYCResult));
   }
 };

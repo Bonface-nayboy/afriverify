@@ -1,0 +1,56 @@
+
+{
+  "entities": {
+    "Verification": {
+      "title": "Verification",
+      "description": "A record of an identity verification attempt (KYC).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "ocrData": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "idNumber": { "type": "string" },
+            "dob": { "type": "string" },
+            "expiry": { "type": "string" },
+            "documentType": { "type": "string" },
+            "country": { "type": "string" }
+          }
+        },
+        "faceMatchScore": { "type": "number" },
+        "livenessScore": { "type": "number" },
+        "status": { "type": "string", "enum": ["VERIFIED", "SUSPICIOUS", "FAILED"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "aiExplanation": { "type": "string" }
+      },
+      "required": ["ocrData", "status", "timestamp"]
+    },
+    "AttendanceRecord": {
+      "title": "Attendance Record",
+      "description": "A record of a successful facial recognition check-in.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "confidence": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "confidence", "timestamp"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/verifications/{verificationId}": {
+      "schema": "#/backend/entities/Verification",
+      "description": "Collection of identity verification records."
+    },
+    "/attendance/{attendanceId}": {
+      "schema": "#/backend/entities/AttendanceRecord",
+      "description": "Collection of employee check-in records."
+    }
+  }
+}

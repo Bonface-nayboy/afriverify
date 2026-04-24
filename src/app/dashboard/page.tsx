@@ -1,6 +1,7 @@
+
 "use client"
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   Users, 
@@ -8,22 +9,24 @@ import {
   AlertTriangle, 
   TrendingUp,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  ShieldAlert,
+  Clock
 } from 'lucide-react';
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
   AreaChart,
-  Area
+  Area,
+  XAxis,
+  YAxis
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { api, KYCResult } from '@/lib/api';
+import { formatDistanceToNow } from 'date-fns';
 
-const data = [
+const staticData = [
   { name: 'Mon', count: 400 },
   { name: 'Tue', count: 300 },
   { name: 'Wed', count: 600 },
@@ -33,14 +36,27 @@ const data = [
   { name: 'Sun', count: 100 },
 ];
 
-const activity = [
-  { id: 1, user: 'John D.', type: 'KYC', status: 'Verified', time: '2 mins ago' },
-  { id: 2, user: 'Sarah K.', type: 'Liveness', status: 'Failed', time: '15 mins ago' },
-  { id: 3, user: 'Michael R.', type: 'Attendance', status: 'Verified', time: '45 mins ago' },
-  { id: 4, user: 'Elena V.', type: 'KYC', status: 'Pending', time: '1 hour ago' },
-];
-
 export default function DashboardOverview() {
+  const [recentVerifications, setRecentVerifications] = useState<KYCResult[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await api.getRecentVerifications(10);
+        setRecentVerifications(data);
+      } catch (err) {
+        console.error("Dashboard data fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const totalCount = recentVerifications.length > 0 ? 12842 + recentVerifications.length : 12842;
+  const fraudCount = recentVerifications.filter(v => v.status === 'SUSPICIOUS').length;
+
   return (
     <div className="space-y-8">
       <div>
@@ -52,7 +68,7 @@ export default function DashboardOverview() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard 
           title="Total Verifications" 
-          value="12,842" 
+          value={totalCount.toLocaleString()} 
           change="+12.5%" 
           trend="up" 
           icon={Users} 
@@ -66,9 +82,9 @@ export default function DashboardOverview() {
         />
         <MetricCard 
           title="Fraud Alerts" 
-          value="24" 
-          change="-4.2%" 
-          trend="down" 
+          value={(24 + fraudCount).toString()} 
+          change={fraudCount > 0 ? `+${fraudCount}` : "0"} 
+          trend={fraudCount > 0 ? "up" : "down"} 
           icon={AlertTriangle} 
         />
         <MetricCard 
@@ -90,7 +106,7 @@ export default function DashboardOverview() {
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data}>
+                <AreaChart data={staticData}>
                   <defs>
                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -118,31 +134,46 @@ export default function DashboardOverview() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {activity.map((item) => (
-                <div key={item.id} className="flex items-center justify-between">
+              {loading ? (
+                <div className="py-8 text-center text-muted-foreground">Loading logs...</div>
+              ) : recentVerifications.length > 0 ? recentVerifications.map((item) => (
+                <div key={item.id} className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center font-bold text-xs",
-                      item.status === 'Verified' ? "bg-green-100 text-green-700" :
-                      item.status === 'Failed' ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
+                      "h-10 w-10 rounded-full flex items-center justify-center font-bold text-xs shrink-0",
+                      item.status === 'VERIFIED' ? "bg-green-100 text-green-700" :
+                      item.status === 'FAILED' ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
                     )}>
-                      {item.user[0]}
+                      {item.ocr.name[0]}
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{item.user}</p>
-                      <p className="text-xs text-muted-foreground">{item.type} • {item.time}</p>
+                      <p className="text-sm font-medium">{item.ocr.name}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {formatDistanceToNow(new Date(item.timestamp))} ago
+                      </p>
+                      {item.aiExplanation && (
+                        <p className="text-[10px] text-orange-600 font-medium mt-1 leading-tight flex items-start gap-1">
+                          <ShieldAlert className="w-3 h-3 shrink-0" />
+                          {item.aiExplanation.substring(0, 80)}...
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className={cn(
-                    "px-2 py-1 rounded text-[10px] font-bold uppercase",
-                    item.status === 'Verified' ? "bg-green-50 text-green-700 border border-green-200" :
-                    item.status === 'Failed' ? "bg-red-50 text-red-700 border border-red-200" : 
+                    "px-2 py-1 rounded text-[10px] font-bold uppercase shrink-0",
+                    item.status === 'VERIFIED' ? "bg-green-50 text-green-700 border border-green-200" :
+                    item.status === 'FAILED' ? "bg-red-50 text-red-700 border border-red-200" : 
                     "bg-yellow-50 text-yellow-700 border border-yellow-200"
                   )}>
                     {item.status}
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="py-12 text-center text-sm text-muted-foreground">
+                  No activity found. Start a verification to see results.
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
