@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUser } from '@/firebase';
+import { updateProfile } from 'firebase/auth';
 import { 
   User, 
   Settings as SettingsIcon, 
@@ -15,7 +17,6 @@ import {
   Key,
   Globe,
   Save,
-  Sliders,
   Fingerprint,
   Smartphone,
   Download,
@@ -52,12 +53,18 @@ export default function SettingsPage() {
   const [threshold, setThreshold] = useState([85]);
   const [retention, setRetention] = useState(true);
   const [colorTheme, setColorTheme] = useState('default');
+  const [displayName, setDisplayName] = useState('');
+
+  useEffect(() => {
+    if (user?.displayName) {
+      setDisplayName(user.displayName);
+    }
+  }, [user]);
 
   useEffect(() => {
     const savedColor = localStorage.getItem('app-color-theme') || 'default';
     setColorTheme(savedColor);
     
-    // Apply theme logic: color themes should NOT be applied on system default mode
     if (theme === 'system') {
       document.documentElement.removeAttribute('data-color-theme');
     } else {
@@ -74,7 +81,7 @@ export default function SettingsPage() {
       toast({
         variant: "destructive",
         title: "Feature Restricted",
-        description: "Color themes are disabled in 'System Default' mode. Switch to Light or Dark mode to change colors.",
+        description: "Color themes are disabled in 'System Default' mode.",
       });
       return;
     }
@@ -88,24 +95,33 @@ export default function SettingsPage() {
     }
     toast({
       title: "Theme Updated",
-      description: `Switched to ${id.charAt(0).toUpperCase() + id.slice(1)} theme.`,
+      description: `Switched to ${id} theme.`,
     });
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      await updateProfile(user, { displayName: displayName });
+      toast({
+        title: "Profile Updated",
+        description: "Your full name has been updated successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: error.message || "Could not update profile.",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const initials = user?.displayName 
     ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
     : user?.email?.substring(0, 2).toUpperCase() || 'U';
-
-  const handleSave = () => {
-    setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
-      toast({
-        title: "Settings Saved",
-        description: "Your configuration has been updated successfully.",
-      });
-    }, 800);
-  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -132,7 +148,12 @@ export default function SettingsPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" defaultValue={user?.displayName || 'Authorized Admin'} />
+                    <Input 
+                      id="name" 
+                      value={displayName} 
+                      onChange={(e) => setDisplayName(e.target.value)} 
+                      placeholder="Enter your full name"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Work Email</Label>
@@ -141,9 +162,21 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex justify-end pt-4">
-                  <Button onClick={handleSave} disabled={saving}>
+                  <Button onClick={handleUpdateProfile} disabled={saving}>
                     {saving ? "Saving..." : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-sm bg-muted/20">
+              <CardHeader>
+                <CardTitle className="text-sm">Account Metadata</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-2 text-xs font-mono text-muted-foreground">
+                  <p>User ID: {user?.uid}</p>
+                  <p>Provider: {user?.providerData[0]?.providerId || 'google.com'}</p>
                 </div>
               </CardContent>
             </Card>
@@ -185,7 +218,7 @@ export default function SettingsPage() {
                     ))}
                   </div>
                   {theme === 'system' && (
-                    <p className="text-xs text-orange-600 font-medium">Color themes are disabled when using System Default mode.</p>
+                    <p className="text-xs text-orange-600 font-medium">Color themes are disabled in System mode.</p>
                   )}
                 </div>
 

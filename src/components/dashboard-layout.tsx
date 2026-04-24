@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -110,7 +111,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground font-body">
-      {/* Sidebar */}
       <aside className="w-64 border-r bg-card hidden md:flex flex-col">
         <div className="p-6">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary">
@@ -157,7 +157,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
         <header className="h-16 border-b bg-card flex items-center justify-between px-8">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -168,7 +167,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </span>
           </div>
 
-          {/* Center Search - Fully Functional */}
           <div className="flex-1 max-w-md mx-4 hidden lg:block">
             <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
               <DialogTrigger asChild>
@@ -177,7 +175,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   className="w-full justify-start text-muted-foreground font-normal bg-muted/50 border-none h-10 px-4 group hover:bg-muted/80"
                 >
                   <Search className="w-4 h-4 mr-2 group-hover:text-primary transition-colors" />
-                  <span>Search all files and folders...</span>
+                  <span>Search files and sections...</span>
                   <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 shadow-sm">
                     <Command className="w-2.5 h-2.5" /> K
                   </kbd>
@@ -187,14 +185,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <DialogHeader className="sr-only">
                   <DialogTitle>Global System Search</DialogTitle>
                   <DialogDescription>
-                    Search across application folders, verification files, and system records.
+                    Search across application sections and verification records.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex items-center border-b px-4 h-12">
                   <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                   <input
                     className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                    placeholder="Type to search 'folders' or 'files'..."
+                    placeholder="Type to search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     autoFocus
@@ -206,9 +204,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   )}
                 </div>
                 <div className="max-h-[400px] overflow-y-auto p-2 space-y-4">
-                  {/* Folders (Navigation) */}
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 py-2">Folders (Sections)</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 py-2">App Sections</p>
                     {filteredNav.length > 0 ? filteredNav.map((item) => (
                       <Button 
                         key={item.href} 
@@ -223,10 +220,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     )}
                   </div>
 
-                  {/* Files (Records) */}
                   {searchQuery && (
                     <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 py-2">Files (Records)</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 py-2">Records</p>
                       {filteredFiles.length > 0 ? filteredFiles.map((file, idx) => (
                         <Button 
                           key={idx} 
@@ -241,20 +237,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                           </div>
                         </Button>
                       )) : (
-                        <p className="text-xs text-muted-foreground px-3 py-2">No matching files found.</p>
+                        <p className="text-xs text-muted-foreground px-3 py-2">No matching records found.</p>
                       )}
                     </div>
                   )}
 
                   {!searchQuery && (
                     <div className="space-y-2 p-3">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Quick Commands</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Quick Actions</p>
                       <div className="grid grid-cols-2 gap-2">
                         <Button variant="outline" className="h-20 flex-col gap-2 text-xs" onClick={() => { setIsSearchOpen(false); router.push('/dashboard/kyc'); }}>
                           <ShieldCheck className="h-5 w-5 text-primary" /> Start KYC
                         </Button>
                         <Button variant="outline" className="h-20 flex-col gap-2 text-xs" onClick={() => { setIsSearchOpen(false); router.push('/dashboard/settings'); }}>
-                          <Settings className="h-5 w-5 text-muted-foreground" /> App Settings
+                          <Settings className="h-5 w-5 text-muted-foreground" /> Settings
                         </Button>
                       </div>
                     </div>
@@ -274,7 +270,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuLabel className="text-[10px] font-bold uppercase text-muted-foreground">App Appearance</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-[10px] font-bold uppercase text-muted-foreground">Appearance</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => setTheme("light")} className="flex items-center gap-2 cursor-pointer">
                   <Sun className="w-4 h-4 text-amber-500" /> <span>Light Mode</span>
                 </DropdownMenuItem>
@@ -283,7 +279,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setTheme("system")} className="flex items-center gap-2 cursor-pointer">
-                  <Monitor className="w-4 h-4 opacity-50" /> <span>System Default</span>
+                  <Monitor className="w-4 h-4 opacity-50" /> <span>System</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -309,7 +305,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/dashboard/settings')} className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Account Settings</span>
+                  <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer" onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
