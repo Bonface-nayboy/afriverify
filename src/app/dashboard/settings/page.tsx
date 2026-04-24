@@ -1,7 +1,6 @@
-
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,13 +17,12 @@ import {
   Save,
   Sliders,
   Fingerprint,
-  Mail,
   Smartphone,
-  Server,
   Download,
   Trash2,
-  RefreshCw,
-  Plus
+  Plus,
+  Palette,
+  Check
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -33,18 +31,66 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTheme } from 'next-themes';
 
-type SettingsTab = 'profile' | 'security' | 'notifications' | 'compliance' | 'api' | 'data';
+type SettingsTab = 'profile' | 'appearance' | 'security' | 'notifications' | 'compliance' | 'api' | 'data';
+
+const colorThemes = [
+  { id: 'default', name: 'Standard Blue', color: 'bg-blue-500' },
+  { id: 'green', name: 'Emerald Green', color: 'bg-emerald-500' },
+  { id: 'purple', name: 'Royal Purple', color: 'bg-purple-500' },
+  { id: 'orange', name: 'Amber Orange', color: 'bg-orange-500' },
+];
 
 export default function SettingsPage() {
   const { user } = useUser();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   
-  // State for simulated settings
   const [saving, setSaving] = useState(false);
   const [threshold, setThreshold] = useState([85]);
   const [retention, setRetention] = useState(true);
+  const [colorTheme, setColorTheme] = useState('default');
+
+  useEffect(() => {
+    const savedColor = localStorage.getItem('app-color-theme') || 'default';
+    setColorTheme(savedColor);
+    
+    // Apply theme logic: color themes should NOT be applied on system default mode
+    if (theme === 'system') {
+      document.documentElement.removeAttribute('data-color-theme');
+    } else {
+      if (savedColor !== 'default') {
+        document.documentElement.setAttribute('data-color-theme', savedColor);
+      } else {
+        document.documentElement.removeAttribute('data-color-theme');
+      }
+    }
+  }, [theme]);
+
+  const handleColorThemeChange = (id: string) => {
+    if (theme === 'system') {
+      toast({
+        variant: "destructive",
+        title: "Feature Restricted",
+        description: "Color themes are disabled in 'System Default' mode. Switch to Light or Dark mode to change colors.",
+      });
+      return;
+    }
+
+    setColorTheme(id);
+    localStorage.setItem('app-color-theme', id);
+    if (id === 'default') {
+      document.documentElement.removeAttribute('data-color-theme');
+    } else {
+      document.documentElement.setAttribute('data-color-theme', id);
+    }
+    toast({
+      title: "Theme Updated",
+      description: `Switched to ${id.charAt(0).toUpperCase() + id.slice(1)} theme.`,
+    });
+  };
 
   const initials = user?.displayName 
     ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
@@ -56,7 +102,7 @@ export default function SettingsPage() {
       setSaving(false);
       toast({
         title: "Settings Saved",
-        description: "Your system configuration has been updated successfully.",
+        description: "Your configuration has been updated successfully.",
       });
     }, 800);
   };
@@ -94,17 +140,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="uid">Internal User ID (UID)</Label>
-                  <div className="flex gap-2">
-                    <Input id="uid" defaultValue={user?.uid || ''} disabled className="font-mono text-xs bg-muted/50 flex-1" />
-                    <Button variant="ghost" size="sm" onClick={() => {
-                      navigator.clipboard.writeText(user?.uid || '');
-                      toast({ description: "UID copied to clipboard" });
-                    }}>Copy</Button>
-                  </div>
-                </div>
-
                 <div className="flex justify-end pt-4">
                   <Button onClick={handleSave} disabled={saving}>
                     {saving ? "Saving..." : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
@@ -112,22 +147,57 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        );
 
+      case 'appearance':
+        return (
+          <div className="space-y-6 animate-in fade-in duration-300">
             <Card className="border-none shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Sliders className="w-5 h-5 text-primary" /> Biometric Sensitivity
+                  <Palette className="w-5 h-5 text-primary" /> Visual Preferences
                 </CardTitle>
-                <CardDescription>Adjust the thresholds for automated verification.</CardDescription>
+                <CardDescription>Customize the look and feel of your command center.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-8">
                 <div className="space-y-4">
+                  <Label>Color Theme</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {colorThemes.map((t) => (
+                      <button
+                        key={t.id}
+                        disabled={theme === 'system'}
+                        onClick={() => handleColorThemeChange(t.id)}
+                        className={cn(
+                          "group relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed",
+                          colorTheme === t.id ? "border-primary bg-primary/5" : "border-transparent"
+                        )}
+                      >
+                        <div className={cn("h-8 w-8 rounded-full shadow-inner", t.color)} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{t.name}</span>
+                        {colorTheme === t.id && (
+                          <div className="absolute top-2 right-2 h-4 w-4 bg-primary text-white rounded-full flex items-center justify-center">
+                            <Check className="h-2 w-2" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  {theme === 'system' && (
+                    <p className="text-xs text-orange-600 font-medium">Color themes are disabled when using System Default mode.</p>
+                  )}
+                </div>
+
+                <div className="space-y-4 pt-4 border-t">
                   <div className="flex items-center justify-between">
-                    <Label>Confidence Threshold</Label>
+                    <div>
+                      <Label className="block">Biometric Threshold</Label>
+                      <p className="text-[10px] text-muted-foreground">Adjust sensitivity for auto-approvals</p>
+                    </div>
                     <Badge variant="secondary">{threshold[0]}%</Badge>
                   </div>
                   <Slider value={threshold} onValueChange={setThreshold} max={100} step={1} />
-                  <p className="text-xs text-muted-foreground">High sensitivity reduces false positives but increases manual reviews.</p>
                 </div>
               </CardContent>
             </Card>
@@ -246,10 +316,6 @@ export default function SettingsPage() {
                   <span>live_pk_********************8a3f</span>
                   <Badge>Active</Badge>
                 </div>
-                <div className="p-4 bg-muted/50 rounded-lg border font-mono text-xs flex items-center justify-between">
-                  <span>test_sk_********************92b1</span>
-                  <Badge variant="outline">Sandbox</Badge>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -285,53 +351,21 @@ export default function SettingsPage() {
             <div className="p-2 bg-primary/10 rounded-xl">
               <SettingsIcon className="w-8 h-8 text-primary" />
             </div>
-            System Command Center
+            Settings
           </h1>
-          <p className="text-muted-foreground mt-1">Global infrastructure, security, and profile orchestration.</p>
+          <p className="text-muted-foreground mt-1">Configure your personal and system-wide preferences.</p>
         </div>
-        <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-200">
-          Project Status: Production
-        </Badge>
       </div>
 
       <div className="grid md:grid-cols-[240px_1fr] gap-8">
         <aside className="space-y-1">
-          <SettingsNavButton 
-            icon={User} 
-            label="Profile" 
-            active={activeTab === 'profile'} 
-            onClick={() => setActiveTab('profile')} 
-          />
-          <SettingsNavButton 
-            icon={Shield} 
-            label="Security" 
-            active={activeTab === 'security'} 
-            onClick={() => setActiveTab('security')} 
-          />
-          <SettingsNavButton 
-            icon={Bell} 
-            label="Notifications" 
-            active={activeTab === 'notifications'} 
-            onClick={() => setActiveTab('notifications')} 
-          />
-          <SettingsNavButton 
-            icon={Globe} 
-            label="Region & Compliance" 
-            active={activeTab === 'compliance'} 
-            onClick={() => setActiveTab('compliance')} 
-          />
-          <SettingsNavButton 
-            icon={Key} 
-            label="API Keys" 
-            active={activeTab === 'api'} 
-            onClick={() => setActiveTab('api')} 
-          />
-          <SettingsNavButton 
-            icon={Database} 
-            label="Data Management" 
-            active={activeTab === 'data'} 
-            onClick={() => setActiveTab('data')} 
-          />
+          <SettingsNavButton icon={User} label="Profile" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
+          <SettingsNavButton icon={Palette} label="Appearance" active={activeTab === 'appearance'} onClick={() => setActiveTab('appearance')} />
+          <SettingsNavButton icon={Shield} label="Security" active={activeTab === 'security'} onClick={() => setActiveTab('security')} />
+          <SettingsNavButton icon={Bell} label="Notifications" active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} />
+          <SettingsNavButton icon={Globe} label="Compliance" active={activeTab === 'compliance'} onClick={() => setActiveTab('compliance')} />
+          <SettingsNavButton icon={Key} label="API Keys" active={activeTab === 'api'} onClick={() => setActiveTab('api')} />
+          <SettingsNavButton icon={Database} label="Data" active={activeTab === 'data'} onClick={() => setActiveTab('data')} />
         </aside>
 
         <div className="min-h-[500px]">

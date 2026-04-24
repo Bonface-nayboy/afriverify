@@ -26,6 +26,23 @@
     --radius: 0.75rem;
   }
 
+  /* Color Theme Overrides */
+  [data-color-theme='green'] {
+    --primary: 142.1 76.2% 36.3%;
+    --ring: 142.1 76.2% 36.3%;
+    --accent: 160 84% 39%;
+  }
+  [data-color-theme='purple'] {
+    --primary: 262.1 83.3% 57.8%;
+    --ring: 262.1 83.3% 57.8%;
+    --accent: 270 70% 60%;
+  }
+  [data-color-theme='orange'] {
+    --primary: 24.6 95% 53.1%;
+    --ring: 24.6 95% 53.1%;
+    --accent: 30 100% 50%;
+  }
+
   .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
@@ -46,6 +63,19 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 211 100% 55%;
+  }
+
+  .dark[data-color-theme='green'] {
+    --primary: 142.1 70.6% 45.3%;
+    --ring: 142.1 70.6% 45.3%;
+  }
+  .dark[data-color-theme='purple'] {
+    --primary: 263.4 70% 50.4%;
+    --ring: 263.4 70% 50.4%;
+  }
+  .dark[data-color-theme='orange'] {
+    --primary: 20.5 90.2% 48.2%;
+    --ring: 20.5 90.2% 48.2%;
   }
 }
 

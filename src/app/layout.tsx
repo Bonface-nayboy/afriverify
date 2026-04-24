@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase';
 import { FirebaseErrorListener } from '@/components/firebase-error-listener';
 import { ThemeProvider } from '@/components/theme-provider';
+import { ColorThemeInitializer } from '@/components/color-theme-initializer';
 
 export const metadata: Metadata = {
   title: 'AfriVerify Hub | Modern Identity Verification',
@@ -26,10 +27,11 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
-          enableSystem={false}
+          enableSystem={true}
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
+            <ColorThemeInitializer />
             <FirebaseErrorListener />
             {children}
             <Toaster />
