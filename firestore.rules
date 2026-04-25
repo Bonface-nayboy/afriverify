@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Security rules for AfriVerify Hub
-    // Rules updated to ensure authenticated access to core collections
 
     // Allow authenticated users to manage verification records
     match /verifications/{verificationId} {
@@ -11,6 +10,11 @@ service cloud.firestore {
     
     // Allow authenticated users to manage attendance logs
     match /attendance/{attendanceId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Allow authenticated users to manage their developer API keys
+    match /apikeys/{keyId} {
       allow read, write: if request.auth != null;
     }
 
