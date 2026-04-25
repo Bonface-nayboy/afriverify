@@ -34,6 +34,7 @@ import { KYCResult } from '@/lib/api';
 import { formatDistanceToNow } from 'date-fns';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { Badge } from '@/components/ui/badge';
 
 const staticTrendData = [
   { name: 'Mon', count: 420 }, { name: 'Tue', count: 380 },
