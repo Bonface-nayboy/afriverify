@@ -1,18 +1,18 @@
 
 "use client"
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Check, 
-  Zap, 
   ShieldCheck, 
   Building2, 
   Globe, 
   Clock,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -25,7 +25,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
 import { api } from '@/lib/api';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -106,6 +105,15 @@ export default function PricingPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpgrade = (plan: string) => {
+    if (plan === "Professional") {
+      toast({
+        title: "Redirecting...",
+        description: "Taking you to the secure checkout for the Professional plan.",
+      });
     }
   };
 
@@ -193,6 +201,7 @@ export default function PricingPage() {
                           <Input value={user?.email || ''} disabled className="bg-muted/50" />
                         </div>
                         <Button type="submit" className="w-full" disabled={loading}>
+                          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                           {loading ? "Sending..." : "Request Proposal"}
                         </Button>
                       </form>
@@ -200,7 +209,12 @@ export default function PricingPage() {
                   </DialogContent>
                 </Dialog>
               ) : (
-                <Button variant={plan.variant} className="w-full h-12 font-bold" disabled={plan.name === "Starter"}>
+                <Button 
+                  variant={plan.variant} 
+                  className="w-full h-12 font-bold" 
+                  disabled={plan.name === "Starter"}
+                  onClick={() => handleUpgrade(plan.name)}
+                >
                   {plan.cta} {plan.name !== "Starter" && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
               )}

@@ -4,7 +4,7 @@
 import { kycIdDataExtraction } from '@/ai/flows/kyc-id-data-extraction-flow';
 import { explainFraudAlert } from '@/ai/flows/fraud-alert-explanation-flow';
 import { assessRisk } from '@/ai/flows/risk-assessment-flow';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -45,17 +45,17 @@ export interface AttendanceResult {
 export const api = {
   async verifyIdentity(idFront: string, idBack: string, selfie: string): Promise<KYCResult> {
     try {
-      // 1. OCR Extraction
+      // 1. OCR Extraction using AI Flow
       const extracted = await kycIdDataExtraction({
         idFrontPhotoDataUri: idFront,
         idBackPhotoDataUri: idBack || undefined
       });
 
-      // 2. Simulated Biometric Analysis
+      // 2. Simulated Biometric Analysis (Internal Engine)
       const faceMatchScore = 75 + Math.random() * 25;
       const livenessScore = 80 + Math.random() * 20;
 
-      // 3. AI Risk Assessment
+      // 3. AI Risk Assessment using AI Flow
       const riskResult = await assessRisk({
         livenessScore,
         faceMatchScore,
@@ -111,29 +111,57 @@ export const api = {
       timestamp: new Date().toISOString(),
       createdAt: serverTimestamp(),
       companyId: MOCK_COMPANY_ID,
-      ocrData: { name: "Biometric Session", idNumber: "N/A", dob: "N/A", expiry: "N/A", documentType: "Liveness", country: "Local" }
+      ocrData: { 
+        name: "Biometric Session", 
+        idNumber: "N/A", 
+        dob: "N/A", 
+        expiry: "N/A", 
+        documentType: "Liveness", 
+        country: "Local" 
+      },
+      riskLevel: score > 90 ? 'LOW' : 'MEDIUM'
     };
     addDoc(collection(firestore, 'verifications'), data).catch(() => {});
   },
 
   async recognizeFace(image: string): Promise<AttendanceResult> {
+    // Simulated high-precision recognition
     const result: AttendanceResult = {
-      userId: 'emp_' + Math.floor(Math.random() * 1000),
+      userId: 'emp_' + (1000 + Math.floor(Math.random() * 8999)),
       userName: 'Ngozi Okonjo',
-      confidence: 98 + Math.random() * 2,
+      confidence: 98.4 + Math.random() * 1.5,
       timestamp: new Date().toISOString(),
       companyId: MOCK_COMPANY_ID,
       location: { lat: 6.5244, lng: 3.3792 }
     };
 
     if (firestore) {
-      addDoc(collection(firestore, 'attendance'), { ...result, createdAt: serverTimestamp() }).catch(() => {});
+      addDoc(collection(firestore, 'attendance'), { 
+        ...result, 
+        createdAt: serverTimestamp() 
+      }).catch(() => {});
     }
     return result;
   },
 
   async submitEnterpriseLead(lead: any) {
     if (!firestore) return;
-    addDoc(collection(firestore, 'leads'), { ...lead, timestamp: new Date().toISOString(), createdAt: serverTimestamp() }).catch(() => {});
+    return addDoc(collection(firestore, 'leads'), { 
+      ...lead, 
+      timestamp: new Date().toISOString(), 
+      createdAt: serverTimestamp() 
+    });
+  },
+
+  async generateAPIKey(name: string) {
+    if (!firestore) return;
+    const newKey = {
+      name,
+      key: `live_pk_afri_${Math.random().toString(36).substring(2, 15)}`,
+      status: 'ACTIVE',
+      companyId: MOCK_COMPANY_ID,
+      createdAt: serverTimestamp()
+    };
+    return addDoc(collection(firestore, 'apikeys'), newKey);
   }
 };
