@@ -8,7 +8,7 @@
       "properties": {
         "id": { "type": "string" },
         "userId": { "type": "string" },
-        "companyId": { "type": "string", "description": "The unique ID of the company/organization this record belongs to." },
+        "companyId": { "type": "string" },
         "ocrData": {
           "type": "object",
           "properties": {
@@ -22,6 +22,8 @@
         },
         "faceMatchScore": { "type": "number" },
         "livenessScore": { "type": "number" },
+        "riskScore": { "type": "number" },
+        "riskLevel": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
         "status": { "type": "string", "enum": ["VERIFIED", "SUSPICIOUS", "FAILED"] },
         "timestamp": { "type": "string", "format": "date-time" },
         "aiExplanation": { "type": "string" }
@@ -34,25 +36,27 @@
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
-        "companyId": { "type": "string", "description": "The unique ID of the company/organization this record belongs to." },
+        "companyId": { "type": "string" },
         "userName": { "type": "string" },
         "confidence": { "type": "number" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "timestamp": { "type": "string", "format": "date-time" },
+        "location": { "type": "object", "properties": { "lat": { "type": "number" }, "lng": { "type": "number" } } }
       },
       "required": ["userId", "userName", "confidence", "timestamp", "companyId"]
     },
-    "EnterpriseLead": {
-      "title": "Enterprise Lead",
-      "description": "Information captured from users interested in enterprise features.",
+    "APIKey": {
+      "title": "API Key",
+      "description": "Credential for developers to access the AfriVerify API.",
       "type": "object",
       "properties": {
-        "userId": { "type": "string" },
-        "email": { "type": "string" },
-        "company": { "type": "string" },
-        "featureOfInterest": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "key": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "REVOKED"] },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "email", "company", "timestamp"]
+      "required": ["companyId", "key", "status"]
     }
   },
   "auth": {
@@ -67,9 +71,9 @@
       "schema": "#/backend/entities/AttendanceRecord",
       "description": "Collection of employee check-in records."
     },
-    "/leads/{leadId}": {
-      "schema": "#/backend/entities/EnterpriseLead",
-      "description": "Collection of enterprise sales leads."
+    "/apikeys/{keyId}": {
+      "schema": "#/backend/entities/APIKey",
+      "description": "Collection of developer API keys."
     }
   }
 }
