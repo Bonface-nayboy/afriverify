@@ -21,7 +21,7 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen">
       {/* Navigation */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-8">
+        <div className="container flex h-16 items-center justify-between px-8 mx-auto">
           <div className="flex items-center gap-2 font-bold text-2xl text-primary">
             <ShieldCheck className="w-8 h-8" />
             <span>AfriVerify</span>
@@ -32,7 +32,7 @@ export default function LandingPage() {
             <Link href="/dashboard" className="hover:text-primary transition-colors">Pricing</Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/dashboard">
+            <Link href="/login">
               <Button variant="ghost" className="hidden sm:inline-flex">Sign In</Button>
             </Link>
             <Link href="/dashboard">
@@ -58,13 +58,15 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/dashboard">
-                <Button size="lg" className="h-14 px-8 text-lg rounded-full">
+                <Button size="lg" className="h-14 px-8 text-lg rounded-full w-full sm:w-auto">
                   Launch Demo Dashboard <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full">
-                View Documentation
-              </Button>
+              <Link href="#features">
+                <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full w-full sm:w-auto">
+                  View Documentation
+                </Button>
+              </Link>
             </div>
             <div className="flex items-center gap-8 pt-4">
               <div className="flex -space-x-3">
@@ -79,7 +81,7 @@ export default function LandingPage() {
               </p>
             </div>
           </div>
-          <div className="relative h-[500px] lg:h-[600px] w-full rounded-2xl overflow-hidden shadow-2xl border-4 border-white">
+          <div className="relative h-[400px] lg:h-[500px] w-full rounded-2xl overflow-hidden shadow-2xl border-4 border-white">
             <Image 
               src={heroImg?.imageUrl || ''} 
               alt="Security" 
@@ -181,9 +183,9 @@ console.log(result.status); // "VERIFIED"`}
             © {new Date().getFullYear()} AfriVerify Inc. All rights reserved.
           </p>
           <div className="flex gap-6">
-            <Link href="#" className="text-muted-foreground hover:text-foreground">Twitter</Link>
-            <Link href="#" className="text-muted-foreground hover:text-foreground">LinkedIn</Link>
-            <Link href="#" className="text-muted-foreground hover:text-foreground">Privacy</Link>
+            <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">Twitter</Link>
+            <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">LinkedIn</Link>
+            <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>
           </div>
         </div>
       </footer>
