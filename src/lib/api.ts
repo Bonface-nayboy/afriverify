@@ -1,3 +1,4 @@
+
 'use client';
 
 import { kycIdDataExtraction } from '@/ai/flows/kyc-id-data-extraction-flow';
@@ -8,6 +9,9 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 const { firestore } = initializeFirebase();
+
+// Mock company ID for multi-tenancy demonstration
+const MOCK_COMPANY_ID = 'comp_default_01';
 
 export interface KYCResult {
   id?: string;
@@ -24,6 +28,7 @@ export interface KYCResult {
   status: 'VERIFIED' | 'SUSPICIOUS' | 'FAILED';
   timestamp: string;
   aiExplanation?: string;
+  companyId?: string;
 }
 
 export interface AttendanceResult {
@@ -32,6 +37,7 @@ export interface AttendanceResult {
   userName: string;
   confidence: number;
   timestamp: string;
+  companyId?: string;
 }
 
 export const api = {
@@ -58,7 +64,8 @@ export const api = {
         faceMatchScore,
         livenessScore,
         status,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        companyId: MOCK_COMPANY_ID
       };
 
       if (status === 'SUSPICIOUS') {
@@ -102,7 +109,8 @@ export const api = {
       livenessScore: score,
       status,
       timestamp: new Date().toISOString(),
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
+      companyId: MOCK_COMPANY_ID
     };
     addDoc(collection(firestore, 'verifications'), {
       ...data,
@@ -125,7 +133,8 @@ export const api = {
         userId: 'emp_' + Math.floor(Math.random() * 1000),
         userName: 'Ngozi Okonjo',
         confidence: 98 + Math.random() * 2,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        companyId: MOCK_COMPANY_ID
       };
 
       if (firestore) {

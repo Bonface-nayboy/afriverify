@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Verification": {
@@ -7,6 +8,7 @@
       "properties": {
         "id": { "type": "string" },
         "userId": { "type": "string" },
+        "companyId": { "type": "string", "description": "The unique ID of the company/organization this record belongs to." },
         "ocrData": {
           "type": "object",
           "properties": {
@@ -24,7 +26,7 @@
         "timestamp": { "type": "string", "format": "date-time" },
         "aiExplanation": { "type": "string" }
       },
-      "required": ["ocrData", "status", "timestamp"]
+      "required": ["ocrData", "status", "timestamp", "companyId"]
     },
     "AttendanceRecord": {
       "title": "Attendance Record",
@@ -32,11 +34,12 @@
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
+        "companyId": { "type": "string", "description": "The unique ID of the company/organization this record belongs to." },
         "userName": { "type": "string" },
         "confidence": { "type": "number" },
         "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "userName", "confidence", "timestamp"]
+      "required": ["userId", "userName", "confidence", "timestamp", "companyId"]
     },
     "EnterpriseLead": {
       "title": "Enterprise Lead",

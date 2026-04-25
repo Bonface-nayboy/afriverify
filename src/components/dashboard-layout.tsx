@@ -19,7 +19,8 @@ import {
   Monitor,
   Command,
   X,
-  FileText
+  FileText,
+  CreditCard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ const navItems = [
   { label: 'Liveness Check', icon: UserCheck, href: '/dashboard/liveness' },
   { label: 'Attendance', icon: ScanFace, href: '/dashboard/attendance' },
   { label: 'Activity Logs', icon: ClipboardList, href: '/dashboard/logs' },
+  { label: 'Plans & Pricing', icon: CreditCard, href: '/dashboard/pricing' },
 ];
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
