@@ -1,23 +1,26 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users to read and write to verifications
+    // Security rules for AfriVerify Hub
+    // Rules updated to ensure authenticated access to core collections
+
+    // Allow authenticated users to manage verification records
     match /verifications/{verificationId} {
       allow read, write: if request.auth != null;
     }
     
-    // Allow authenticated users to read and write to attendance records
+    // Allow authenticated users to manage attendance logs
     match /attendance/{attendanceId} {
       allow read, write: if request.auth != null;
     }
 
-    // Allow authenticated users to submit enterprise leads
+    // Allow authenticated users to submit enterprise leads (write-only for security)
     match /leads/{leadId} {
       allow create: if request.auth != null;
-      allow read: if false; // Only admin via console can read leads for now
+      allow read: if false; 
     }
     
-    // Default deny for all other collections
+    // Global deny for unspecified paths
     match /{document=**} {
       allow read, write: if false;
     }
